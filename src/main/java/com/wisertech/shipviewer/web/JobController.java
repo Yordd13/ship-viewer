@@ -37,13 +37,13 @@ public class JobController {
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<JobSnapshot> search() throws IOException {
         return begin("search",
-                List.of("run", "./pipeline", "-search-only", "-area", properties.area()));
+                List.of("run", "./cmd/pipeline", "-search-only", "-area", properties.area()));
     }
 
     @PostMapping("/pipeline")
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<JobSnapshot> pipeline() throws IOException {
-        return begin("pipeline", List.of("run", "./pipeline", "-area", properties.area()));
+        return begin("pipeline", List.of("run", "./cmd/pipeline", "-area", properties.area()));
     }
 
     private ResponseEntity<JobSnapshot> begin(String kind, List<String> arguments)

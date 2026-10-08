@@ -107,7 +107,7 @@ class CollectorRunnerTest {
             child.onExit().get(30, TimeUnit.SECONDS);
         }
         List<String> log = runner.status().log();
-        assertThat(log.get(0)).isEqualTo("$ " + JAVA + " run ./aiscollect");
+        assertThat(log.get(0)).isEqualTo("$ " + JAVA + " run ./cmd/aiscollect");
         assertThat(log).anyMatch(line -> line.startsWith("Error:"));
         assertThat(Files.exists(pipelineDir.resolve("logs").resolve("aiscollect.log"))).isTrue();
     }
@@ -115,9 +115,9 @@ class CollectorRunnerTest {
     @Test
     void onWindowsItIsLaunchedDetachedThroughStart() {
         assertThat(runner(List.of(), true).launchCommand())
-                .containsExactly("cmd", "/c", "start", "\"\"", "/b", JAVA, "run", "./aiscollect");
+                .containsExactly("cmd", "/c", "start", "\"\"", "/b", JAVA, "run", "./cmd/aiscollect");
         assertThat(runner(List.of(), false).launchCommand())
-                .containsExactly(JAVA, "run", "./aiscollect");
+                .containsExactly(JAVA, "run", "./cmd/aiscollect");
     }
 
     @Test

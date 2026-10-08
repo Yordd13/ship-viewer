@@ -38,7 +38,7 @@ class CollectorControllerTest {
 
     private static final CollectorStatus RUNNING = new CollectorStatus(CollectorStatus.RUNNING, 4242L,
             Instant.parse("2026-10-06T10:00:00Z"), Instant.parse("2026-10-06T11:59:00Z"), 1234L,
-            List.of("$ go run ./aiscollect"));
+            List.of("$ go run ./cmd/aiscollect"));
 
     @Autowired
     private MockMvc mvc;
@@ -55,7 +55,7 @@ class CollectorControllerTest {
                 .andExpect(jsonPath("$.state").value("running"))
                 .andExpect(jsonPath("$.pid").value(4242))
                 .andExpect(jsonPath("$.positionsLastHour").value(1234))
-                .andExpect(jsonPath("$.log[0]").value("$ go run ./aiscollect"));
+                .andExpect(jsonPath("$.log[0]").value("$ go run ./cmd/aiscollect"));
     }
 
     @Test

@@ -35,6 +35,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class CollectorRunner {
     static final String EXECUTABLE = "aiscollect";
+    static final String PACKAGE = "./cmd/" + EXECUTABLE;
     static final Path LOG_FILE = Path.of("logs", "aiscollect.log");
 
     private static final Duration STARTING_GRACE = Duration.ofMinutes(2);
@@ -112,7 +113,7 @@ public class CollectorRunner {
 
         Path log = pipelineDir.resolve(LOG_FILE);
         Files.createDirectories(log.getParent());
-        Files.writeString(log, "$ " + properties.goCommand() + " run ./" + EXECUTABLE
+        Files.writeString(log, "$ " + properties.goCommand() + " run " + PACKAGE
                 + System.lineSeparator(), StandardCharsets.UTF_8);
 
         new ProcessBuilder(launchCommand())
@@ -129,7 +130,7 @@ public class CollectorRunner {
         if (windows) {
             command.addAll(List.of("cmd", "/c", "start", "\"\"", "/b"));
         }
-        command.addAll(List.of(properties.goCommand(), "run", "./" + EXECUTABLE));
+        command.addAll(List.of(properties.goCommand(), "run", PACKAGE));
         return command;
     }
 
