@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Ship viewer</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <h1>Ship detections</h1>
+
+  <button id="cal-open" class="runbtn" aria-haspopup="dialog" aria-expanded="false">
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+      <rect x="1" y="2.5" width="10" height="8.5" rx="1.5" fill="none"
+            stroke="currentColor" stroke-width="1.2"/>
+      <path d="M1 5 H11 M3.5 1 V3.5 M8.5 1 V3.5" fill="none"
+            stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    </svg>
+    <span id="cal-open-label">No run</span>
+  </button>
+
+  <button id="collector-chip" class="runbtn" aria-haspopup="dialog" aria-expanded="false"
+          title="The AIS collector">
+    <span id="collector-dot" class="dot"></span>
+    <span id="collector-label">AIS</span>
+  </button>
+
+  <div class="actions" id="job-actions" hidden>
+    <button id="do-search" class="btn">Check for a new pass</button>
+    <button id="do-pipeline" class="btn">Process</button>
+  </div>
+
+  <!-- A real form, not fetch(): logout ends in a redirect to Keycloak, which
+       only a page navigation can follow. -->
+  <form class="account" id="logout-form" method="post" action="/logout">
+    <span id="account-name" class="muted"></span>
+    <input type="hidden" name="_csrf" id="logout-csrf">
+    <button type="submit" class="btn">Log out</button>
+  </form>
+</header>
+
+<section class="summary">
+  <div id="stats" class="stats"></div>
+  <div class="gapline">
+    <p id="gap" class="gap"></p>
+    <button id="notes-toggle" class="linkish" hidden>Details</button>
+  </div>
+  <p id="notes" class="notes" hidden></p>
+</section>
+
+<main class="mapwrap">
+  <div id="map"></div>
+  <div id="mapnotice" class="mapnotice" hidden></div>
+
+  <div id="layers" class="layerpanel">
+    <div class="lgroup" id="lgroup-data">
+      <div class="ltitle">Layers</div>
+    </div>
+
+    <!-- Context, not findings: the radar picture the marks were read from. Its
+         own group, below the views, because it stacks with whichever view is
+         chosen instead of being one of them. -->
+    <div class="lgroup" id="lgroup-context">
+      <div class="ltitle">Context</div>
+
+      <label class="lrow" id="raster-row">
+        <input type="checkbox" id="raster-on">
+        <span class="lsym">
+          <svg class="glyph gl-raster" width="12" height="12" viewBox="0 0 12 12"
+               aria-hidden="true">
+            <rect x="1" y="1" width="10" height="10" rx="1.5"/>
+          </svg>
+        </span>
+        <span class="lname">Radar image</span>
+      </label>
+
+      <div class="lfade" id="raster-fade" hidden>
+        <input type="range" id="raster-opacity" min="0" max="100" step="5"
+               aria-label="Radar image opacity">
+        <span class="lpct" id="raster-pct">70%</span>
+      </div>
+
+      <p class="lnote" id="raster-note" hidden></p>
+    </div>
+  </div>
+
+  <aside id="jobcard" class="jobcard" hidden>
+    <header>
+      <span id="job-dot" class="dot"></span>
+      <strong id="job-title">Job</strong>
+      <span id="job-elapsed" class="elapsed"></span>
+      <button id="job-close" class="iconbtn" title="Hide">&times;</button>
+    </header>
+    <pre id="job-log"></pre>
+  </aside>
+
+  <aside id="collectorcard" class="jobcard collectorcard" hidden role="dialog" aria-label="AIS collector">
+    <header>
+      <span id="collector-card-dot" class="dot"></span>
+      <strong>AIS collector</strong>
+      <span id="collector-state" class="elapsed"></span>
+      <button id="collector-close" class="iconbtn" title="Hide">&times;</button>
+    </header>
+    <dl id="collector-facts" class="collectorfacts"></dl>
+    <div class="collectoractions">
+      <button id="collector-start" class="btn" hidden>Start collector</button>
+      <p id="collector-note"></p>
+    </div>
+    <pre id="collector-log"></pre>
+  </aside>
+</main>
+
+<aside class="sidepanel">
+  <div class="panelhead">
+    <span id="vessel-count">—</span>
+    <span id="vessel-kind" class="muted"></span>
+  </div>
+
+  <div id="vessel-card" class="vcard">
+    <p class="vhint">Pick a mark on the map, or a row below.</p>
+  </div>
+
+  <div id="vessel-list" class="vlist"></div>
+  <p id="vessel-notice" class="vnotice" hidden></p>
+</aside>
+
+<div id="calpop" class="calpop" hidden role="dialog" aria-label="Choose a run">
+  <div class="calnav">
+    <button id="cal-prev" class="iconbtn" title="Previous month" aria-label="Previous month">&lsaquo;</button>
+    <span id="cal-month" class="calmonth"></span>
+    <button id="cal-next" class="iconbtn" title="Next month" aria-label="Next month">&rsaquo;</button>
+    <button id="cal-latest" class="linkish" title="Jump to the newest run">Latest</button>
+  </div>
+
+  <div id="cal-grid" class="calgrid"></div>
+
+  <p class="calfoot">
+    <span>Dates are <strong>UTC</strong>, by acquisition time</span>
+    <span class="callegend">
+      <i class="swatch has"></i>run
+      <i class="swatch none"></i>none found
+      <i class="swatch empty"></i>no pass
+    </span>
+  </p>
+</div>
+
+<div id="caltip" class="caltip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

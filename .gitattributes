@@ -1,0 +1,12 @@
+# Let Git normalise text, but not for the files that a shell has to read.
+#
+# Git on Windows checks files out with CRLF by default. A shell script with
+# CRLF fails on the first line, because the interpreter named after #! ends up
+# with a carriage return glued to it — "/bin/sh^M: bad interpreter". mvnw is the
+# one thing that makes this project buildable on a machine without Maven
+# installed, so it is the one thing that must not be rewritten.
+* text=auto
+
+mvnw text eol=lf
+*.sh text eol=lf
+mvnw.cmd text eol=crlf
