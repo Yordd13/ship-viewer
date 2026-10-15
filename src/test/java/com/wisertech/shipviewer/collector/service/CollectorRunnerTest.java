@@ -2,7 +2,7 @@
 // aProcessCalledAiscollectIsTheRunningCollector: checks an aiscollect.exe process is reported as running.
 // withoutSuchAProcessItIsStopped: checks the state is stopped when no process is named aiscollect.
 // aSecondCollectorIsRefused: checks that starting while a collector process runs throws naming its process id.
-// startingWritesTheLogAndAFailedStartEndsAsStopped: checks the log is written and an Error ends it stopped, then waits for the child to exit.
+// startingWritesTheLogAndAFailedStartEndsAsStopped: checks the log is written and an Error ends it stopped, then waits for the process it started to exit.
 // onWindowsItIsLaunchedDetachedThroughStart: checks the launch command uses cmd /c start /b only on Windows.
 // theStatusSurvivesTheDatabaseBeingAway: checks status still answers, with null counts, when the database fails.
 // runner: builds a collector runner over the given processes with a fixed clock and the temp pipeline folder.
@@ -91,8 +91,11 @@ class CollectorRunnerTest {
     @Test
     void startingWritesTheLogAndAFailedStartEndsAsStopped() throws Exception {
         CollectorRunner runner = runner(List.of(), false);
+        List<ProcessHandle> before = ProcessHandle.current().children().toList();
 
         CollectorStatus starting = runner.start();
+        List<ProcessHandle> started = ProcessHandle.current().children()
+                .filter(child -> !before.contains(child)).toList();
 
         assertThat(starting.state()).isEqualTo(CollectorStatus.STARTING);
         assertThatThrownBy(runner::start).isInstanceOf(CollectorAlreadyRunningException.class)
@@ -103,7 +106,7 @@ class CollectorRunnerTest {
             assertThat(Instant.now()).as("the failed start was noticed").isBefore(deadline);
             Thread.sleep(100);
         }
-        for (ProcessHandle child : ProcessHandle.current().children().toList()) {
+        for (ProcessHandle child : started) {
             child.onExit().get(30, TimeUnit.SECONDS);
         }
         List<String> log = runner.status().log();
